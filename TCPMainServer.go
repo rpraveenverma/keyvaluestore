@@ -1,17 +1,14 @@
 //TCPMainServer
 package main
 import (
-    "encoding/gob"
     "fmt"
     "net"
     "strings"
     "sync"
 )
-
 var kvstore map[string]string
 var connection net.Conn
 var lock sync.Mutex
-
 func server() {
     // listen on a port
     ln, err := net.Listen("tcp", ":9999")
@@ -29,30 +26,27 @@ func server() {
         }
         // handle the connection
         go handleServerConnection(c)
-    }
+        }
 }
 
 func handleServerConnection(c net.Conn) {
     // receive the message
-
-    for {
+    var buf [1024]byte
     var msg string
-    err := gob.NewDecoder(c).Decode(&msg)
-    if err != nil {
-    } else {
-        //print("command is: ",msg)
-        TakeDecision(msg)
-    }
-   }
+    for{
+    num, _ :=c.Read(buf[0:])
+    msg = string(buf[0:num])
+    TakeDecision(msg,c)
+  }
     c.Close()
 }
-func TakeDecision(msg string){
+func TakeDecision(msg string,c net.Conn){
     var cmd, key ,value string
     arr := strings.Split(msg," ")
     var flag int
     flag=0
     if( (len(arr) ==2 && arr[0]=="set" ) || (len(arr)<2 || len(arr)>3)){
-        fmt.Println("Bad Command")
+        c.Write([]byte("Bad Command"))
     }else if len(arr)==2{
     flag=1
     cmd=arr[0]
@@ -65,44 +59,49 @@ func TakeDecision(msg string){
     }
     if flag!=0{
     switch cmd{
-    case "set": set(key,value)
+    case "set": set(key,value,c)
                 break
-    case "get": get(key)
+    case "get": get(key,c)
                 break
-    case "del": del(key)
+    case "del": del(key,c)
                 break
-    default: fmt.Println("Bad Command")
+    case "close":c.Close()
+    default:c.Write([]byte("Bad Command"))
     }
    }
-
 }
 
-func set(key ,value string){
+func set(key ,value string,c net.Conn){
     lock.Lock()
     kvstore[key]=value
     lock.Unlock()
-    fmt.Println("New hashmap is \n")
-    fmt.Println(kvstore)
+    c.Write([]byte("--set"+key))
+
 }
 
-func get(key string){
+func get(key string,c net.Conn){
+
     key =strings.TrimSpace(strings.Trim(key, "\n"))
-    fmt.Println(kvstore[key])
+    lock.Lock()
+    value, bit:=kvstore[key]
+    lock.Unlock()
+    if bit!=true {
+        c.Write([]byte("--Does Not Exist"))
+    }else{
+        c.Write([]byte(value))
+    }
 }
 
-func del(key string){
+func del(key string,c net.Conn){
         key =strings.TrimSpace(strings.Trim(key, "\n"))
         lock.Lock()
         delete(kvstore,key)
         lock.Unlock()
-        fmt.Println(kvstore)
-}
-
-func sendtoclient(){
-
+        c.Write([]byte("--"+key+" Deleted"))
 }
 
 func main() {
+    fmt.Println("Server Started")
     kvstore= make(map[string]string)
     server()
     var input string
