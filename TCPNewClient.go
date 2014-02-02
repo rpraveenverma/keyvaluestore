@@ -9,7 +9,7 @@ import (
     "net"
 
 )
-func Client() {
+func client() {
     // connect to the server
     c, err := net.Dial("tcp", "127.0.0.1:9999")
     if err != nil{
