@@ -99,7 +99,7 @@ func del(key string,c net.Conn){
         lock.Unlock()
         c.Write([]byte("--"+key+" Deleted"))
 }
-
+/*
 func main() {
     fmt.Println("Server Started")
     kvstore= make(map[string]string)
@@ -107,3 +107,4 @@ func main() {
     var input string
     fmt.Scanln(&input)
 }
+*/
