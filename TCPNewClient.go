@@ -36,7 +36,7 @@ func takeInput(msg *string) {
           panic(err)
         }
     *msg=input
-}
+}/*
 func main() {
     fmt.Println("Welcome To Key Value Store")
     fmt.Println("you can use---set-------get-------del-----and----close it--- commands to perform task")
@@ -45,3 +45,4 @@ func main() {
     var input string
     fmt.Scanln(&input)
 }
+*/
